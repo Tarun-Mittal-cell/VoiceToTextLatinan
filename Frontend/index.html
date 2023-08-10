@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Voice to Text</title>
+  </head>
+  <body>
+    <h2>Voice to Text Conversion</h2>
+    <form enctype="multipart/form-data" id="audioForm">
+      <input type="file" name="file" id="audioInput" accept=".flac" />
+      <button type="button" onclick="submitAudio()">Convert</button>
+    </form>
+    <p id="transcript"></p>
+
+    <script>
+      async function submitAudio() {
+        const formData = new FormData(document.getElementById("audioForm"));
+        try {
+          const response = await fetch("/voice-to-text", {
+            method: "POST",
+            body: formData,
+          });
+          if (response.ok) {
+            const data = await response.json();
+            document.getElementById("transcript").innerText = data.transcript;
+          } else {
+            console.error("Failed to convert voice to text");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
