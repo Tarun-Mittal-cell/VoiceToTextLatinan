@@ -24,7 +24,10 @@
             const data = await response.json();
             document.getElementById("transcript").innerText = data.transcript;
           } else {
-            console.error("Failed to convert voice to text");
+            const errorData = await response.json();
+            console.error("Failed to convert voice to text:", errorData.error);
+            document.getElementById("transcript").innerText =
+              "Error: " + errorData.error;
           }
         } catch (error) {
           console.error("Error:", error);
