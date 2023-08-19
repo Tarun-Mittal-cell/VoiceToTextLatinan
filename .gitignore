@@ -1,0 +1,5 @@
+# Exclude secrets
+secrets/
+
+# Exclude virtual environment
+myenv/

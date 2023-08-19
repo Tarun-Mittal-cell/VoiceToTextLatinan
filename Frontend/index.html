@@ -2,35 +2,131 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Voice to Text</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <title>Voice to Text Converter</title>
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        background-color: #141414;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: #ffffff;
+        background: linear-gradient(45deg, #1a1a1a, #333333);
+      }
+
+      h1 {
+        color: #ffffff;
+        text-align: center;
+        font-weight: 700;
+        margin-bottom: 2rem;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        margin-right: 10px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #007bff;
+        margin-top: 20px;
+        background-color: #1a1a1a;
+        color: #ffffff;
+      }
+
+      .container {
+        background-color: #212121;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        width: 80%;
+        max-width: 600px;
+      }
+
+      .container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      }
+    </style>
   </head>
+
   <body>
-    <h2>Voice to Text Conversion</h2>
-    <form enctype="multipart/form-data" id="audioForm">
-      <input type="file" name="file" id="audioInput" accept=".flac" />
-      <button type="button" onclick="submitAudio()">Convert</button>
-    </form>
-    <p id="transcript"></p>
+    <div class="container animate__animated animate__fadeIn">
+      <h1>Voice to Text Converter</h1>
+      <button onclick="startRecording()">Start Recording</button>
+      <button onclick="stopRecording()">Stop Recording</button>
+      <textarea
+        id="transcript"
+        rows="4"
+        placeholder="Transcription will appear here..."
+      ></textarea>
+    </div>
 
     <script>
-      async function submitAudio() {
-        const formData = new FormData(document.getElementById("audioForm"));
-        try {
-          const response = await fetch("/voice-to-text", {
-            method: "POST",
-            body: formData,
-          });
-          if (response.ok) {
-            const data = await response.json();
-            document.getElementById("transcript").innerText = data.transcript;
-          } else {
-            const errorData = await response.json();
-            console.error("Failed to convert voice to text:", errorData.error);
-            document.getElementById("transcript").innerText =
-              "Error: " + errorData.error;
-          }
-        } catch (error) {
-          console.error("Error:", error);
+      let mediaRecorder;
+      let audioChunks = [];
+
+      async function startRecording() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+        mediaRecorder.onstop = sendAudioData;
+        mediaRecorder.start();
+      }
+
+      function stopRecording() {
+        if (mediaRecorder) {
+          mediaRecorder.stop();
+        }
+      }
+
+      async function sendAudioData() {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", audioBlob);
+
+        const response = await fetch("http://127.0.0.1:5000/voice-to-text", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (data.transcript) {
+          document.getElementById("transcript").value = data.transcript;
+        } else if (data.error) {
+          document.getElementById("transcript").value = data.error;
         }
       }
     </script>
